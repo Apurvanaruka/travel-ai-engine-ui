@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dark mode (default) */
+    --night: 10 10 10;      /* #0A0A0A Black - sole dark tone */
+    --panel: 18 18 18;      /* #121212 */
+    --card: 22 22 22;       /* #161616 */
+    --card2: 28 28 28;      /* #1C1C1C */
+    --edge: 40 40 40;       /* #282828 */
+    --edge2: 64 64 64;      /* #404040 */
+    --txt: 240 240 240;     /* #F0F0F0 */
+    --mut: 160 160 160;     /* #A0A0A0 */
+    --dim: 120 120 120;     /* #787878 */
+    --acc: 57 121 231;      /* #3979E7 Primary Blue */
+    --acc2: 44 101 204;     /* #2C65CC Blue Dark */
+    --sec: 12 32 204;       /* #0C20CC Secondary Blue */
+    --scrollbar-thumb: #444444;
+    --shadow-card: 0 10px 30px -18px rgba(0, 0, 0, 0.9);
+    --shadow-glow: 0 0 0 1px rgba(57,121,231,0.35), 0 8px 30px -12px rgba(57,121,231,0.45);
+  }
+
+  html.light {
+    /* Light mode */
+    --night: 247 247 247;   /* #F7F7F7 Grey 50 Surface */
+    --panel: 255 255 255;   /* #ffffff */
+    --card: 255 255 255;    /* #ffffff */
+    --card2: 250 250 250;   /* #FAFAFA */
+    --edge: 228 228 228;    /* #E4E4E4 Grey 200 Borders */
+    --edge2: 200 200 200;   /* #C8C8C8 */
+    --txt: 59 59 59;        /* #3B3B3B Body text primary */
+    --mut: 133 133 133;     /* #858585 Body text muted */
+    --dim: 150 150 150;     /* #969696 */
+    --acc: 57 121 231;      /* #3979E7 Primary Blue */
+    --acc2: 44 101 204;     /* #2C65CC Blue Dark */
+    --sec: 12 32 204;       /* #0C20CC Secondary Blue */
+    --scrollbar-thumb: #999999;
+    --shadow-card: 0 4px 20px -4px rgba(0, 0, 0, 0.08), 0 2px 6px -2px rgba(0, 0, 0, 0.04);
+    --shadow-glow: 0 0 0 1px rgba(57,121,231,0.30), 0 4px 16px -6px rgba(57,121,231,0.25);
+  }
+
+  html {
+    color-scheme: dark;
+  }
+  html.light {
+    color-scheme: light;
+  }
+  body {
+    background-color: rgb(var(--night));
+    color: rgb(var(--txt));
+    @apply font-sans antialiased;
+  }
+  ::selection {
+    @apply bg-acc/40;
+  }
+  html.light ::selection {
+    @apply bg-acc/30 text-txt;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  input,
+  textarea,
+  select {
+    background-color: rgb(var(--card2));
+    color: rgb(var(--txt));
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: rgb(var(--dim));
+  }
+  select option {
+    background-color: rgb(var(--card2));
+    color: rgb(var(--txt));
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-edge bg-card shadow-card;
+  }
+  .inset {
+    @apply rounded-lg border border-edge bg-card2;
+  }
+  .field-label {
+    @apply mb-1.5 block text-[11px] font-medium text-mut;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-acc px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-acc/85 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-edge bg-card2 px-3.5 py-2.5 text-sm font-semibold text-mut transition hover:border-edge2 hover:text-txt disabled:opacity-50;
+  }
+  .icon-btn {
+    @apply grid size-9 place-items-center rounded-lg text-mut transition hover:bg-card2 hover:text-txt;
+  }
+}
+
+details > summary {
+  list-style: none;
+  cursor: pointer;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
