@@ -1,11 +1,11 @@
-import { StoreProvider, useStore } from "./state/store";
-import { TopBar } from "./components/TopBar";
-import { Sidebar } from "./components/Sidebar";
-import { ComposerDock } from "./components/ComposerDock";
-import { AuthView } from "./components/AuthView";
-import { ChatView } from "./components/ChatView";
-import { CheckoutView } from "./components/CheckoutView";
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useParams } from "react-router-dom";
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useParams } from "react-router-dom";
+import { StoreProvider, useStore } from "./hooks/useStore";
+import { ComposerDock } from "./components/layout/ComposerDock";
+import { Sidebar } from "./components/layout/Sidebar";
+import { TopBar } from "./components/layout/TopBar";
+import { AuthPage } from "./pages/AuthPage";
+import { ChatPage } from "./pages/ChatPage";
+import { CheckoutPage } from "./pages/CheckoutPage";
 
 /* Public layout - for the login and registration pages */
 function PublicLayout() {
@@ -16,46 +16,29 @@ function PublicLayout() {
 function PrivateLayout() {
   const { loggedIn, view } = useStore();
   if (!loggedIn) return <Navigate to="/login" replace />;
+
   return (
     <div className="flex h-screen overflow-hidden bg-night text-txt">
       <Sidebar />
-      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <main className="min-w-0 flex-1 overflow-y-auto bg-night text-txt">
           <TopBar />
-          <div className="pt-2 pb-8 px-6">
+          <div className="px-6 pb-8 pt-2">
             <Outlet />
           </div>
         </main>
-        {/* Composer dock at layout level - automatically spans from sidebar edge to right */}
+        {/* Composer dock at layout level - spans from the sidebar edge to the right */}
         {(view === "chat" || view === "home") && <ComposerDock />}
       </div>
     </div>
   );
 }
 
-
-/* Chat page - conversation view */
-function ChatPage() {
-  return <ChatView />;
-}
-
 /* Legacy /chat/:id deep link -> /?conversation=id */
 function ChatRedirect() {
   const { conversationId } = useParams<{ conversationId?: string }>();
-  const target = conversationId
-    ? `/?conversation=${encodeURIComponent(conversationId)}`
-    : "/";
+  const target = conversationId ? `/?conversation=${encodeURIComponent(conversationId)}` : "/";
   return <Navigate to={target} replace />;
-}
-
-/* Checkout page - booking flow */
-function CheckoutPage() {
-  return <CheckoutView />;
-}
-
-/* Booking page - alias for checkout */
-function BookingPage() {
-  return <CheckoutView />;
 }
 
 export default function App() {
@@ -65,8 +48,8 @@ export default function App() {
         <Routes>
           {/* Public routes */}
           <Route element={<PublicLayout />}>
-            <Route path="/login" element={<AuthView mode="login" />} />
-            <Route path="/register" element={<AuthView mode="register" />} />
+            <Route path="/login" element={<AuthPage mode="login" />} />
+            <Route path="/register" element={<AuthPage mode="register" />} />
             {/* Common misspelling of /register - keep old links working. */}
             <Route path="/registor" element={<Navigate to="/register" replace />} />
           </Route>
@@ -77,7 +60,7 @@ export default function App() {
             <Route path="/chat" element={<Navigate to="/" replace />} />
             <Route path="/chat/:conversationId" element={<ChatRedirect />} />
             <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/booking" element={<BookingPage />} />
+            <Route path="/booking" element={<CheckoutPage />} />
           </Route>
 
           {/* Redirect unknown routes */}

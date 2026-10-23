@@ -1,0 +1,169 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dark mode (default) */
+    --night: 10 10 10; /* #0A0A0A Black - sole dark tone */
+    --panel: 18 18 18; /* #121212 */
+    --card: 22 22 22; /* #161616 */
+    --card2: 28 28 28; /* #1C1C1C */
+    --edge: 40 40 40; /* #282828 */
+    --edge2: 64 64 64; /* #404040 */
+    --txt: 240 240 240; /* #F0F0F0 */
+    --mut: 160 160 160; /* #A0A0A0 */
+    --dim: 120 120 120; /* #787878 */
+    --acc: 57 121 231; /* #3979E7 Primary Blue */
+    --acc2: 44 101 204; /* #2C65CC Blue Dark */
+    --sec: 12 32 204; /* #0C20CC Secondary Blue */
+    --scrollbar-thumb: #444444;
+    --shadow-card: 0 10px 30px -18px rgba(0, 0, 0, 0.9);
+    --shadow-glow: 0 0 0 1px rgba(57, 121, 231, 0.35), 0 8px 30px -12px rgba(57, 121, 231, 0.45);
+  }
+
+  html.light {
+    /* Light mode — pale blue-and-white travel dashboard */
+    --night: 245 248 253; /* #F5F8FD Main background */
+    --panel: 255 255 255; /* #ffffff Surface */
+    --card: 255 255 255; /* #ffffff Card background */
+    --card2: 247 250 255; /* #F7FAFF Subtle surface */
+    --edge: 225 234 247; /* #E1EAF7 Primary border */
+    --edge2: 199 215 239; /* #C7D7EF Secondary border */
+    --txt: 16 43 87; /* #102B57 Dark navy text primary */
+    --mut: 112 134 168; /* #7086A8 Secondary text */
+    --dim: 144 164 191; /* #90A4BF Muted text */
+    --acc: 36 117 245; /* #2475F5 Primary blue */
+    --acc2: 27 95 210; /* #1B5FD2 Primary blue dark */
+    --sec: 12 32 204; /* #0C20CC Secondary blue */
+    --grn: 34 197 94; /* #22C55E Success green */
+    --orn: 245 158 11; /* #F59E0B Amber */
+    --red: 239 68 68; /* #EF4444 Error red */
+    --scrollbar-thumb: #c3d2e6;
+    --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-card-hover: 0 4px 12px -2px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+    --shadow-glow: 0 0 0 1px rgba(36, 117, 245, 0.15), 0 4px 16px -6px rgba(36, 117, 245, 0.12);
+  }
+
+  html {
+    color-scheme: light;
+  }
+  html.light {
+    color-scheme: light;
+  }
+  body {
+    background-color: rgb(var(--night));
+    color: rgb(var(--txt));
+    @apply font-sans antialiased;
+  }
+  ::selection {
+    @apply bg-acc/40;
+  }
+  html.light ::selection {
+    @apply bg-acc/30 text-txt;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  input,
+  textarea,
+  select {
+    background-color: rgb(var(--card2));
+    color: rgb(var(--txt));
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: rgb(var(--dim));
+  }
+  select option {
+    background-color: rgb(var(--card2));
+    color: rgb(var(--txt));
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-edge bg-card shadow-card;
+  }
+  .inset {
+    @apply rounded-lg border border-edge bg-card2;
+  }
+  .field-label {
+    @apply mb-1.5 block text-[11px] font-medium text-mut;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-acc px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-acc2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-edge bg-card2 px-3.5 py-2.5 text-sm font-semibold text-mut transition hover:border-edge2 hover:text-txt disabled:opacity-50;
+  }
+  .icon-btn {
+    @apply grid size-9 place-items-center rounded-lg text-mut transition hover:bg-card2 hover:text-txt;
+  }
+  /* Flight result card — premium */
+  .flight-card {
+    @apply rounded-2xl border border-edge bg-card shadow-card transition duration-200;
+    box-shadow: var(--shadow-card);
+  }
+  .flight-card:hover {
+    box-shadow: var(--shadow-card-hover);
+    border-color: rgb(var(--edge2));
+  }
+  .flight-card-hover {
+    @apply transition duration-200;
+  }
+  .flight-card-hover:hover {
+    box-shadow: var(--shadow-card-hover);
+    border-color: rgb(var(--edge2));
+  }
+  /* Amber layover / non-stop badge */
+  .badge-orn {
+    @apply inline-flex items-center gap-1.5 rounded-md border border-orn/30 bg-orn/10 text-orn text-[11px] font-semibold px-2.5 py-1;
+  }
+  .badge-grn {
+    @apply inline-flex items-center gap-1.5 rounded-md border border-grn/30 bg-grn/10 text-grn text-[11px] font-semibold px-2.5 py-1;
+  }
+  .badge-slate {
+    @apply inline-flex items-center gap-1.5 rounded-md border border-edge bg-card2 text-mut text-[11px] font-semibold px-2.5 py-1;
+  }
+  /* Sidebar section */
+  .sidebar-section-label {
+    @apply mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-mut;
+  }
+  /* Filter pill */
+  .filter-control {
+    @apply rounded-lg border border-edge bg-card px-3 py-2 text-sm text-txt outline-none focus:border-acc/60 focus:ring-1 focus:ring-acc/40;
+  }
+  /* Tabular numerals for prices */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Scrollbar hide utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+details > summary {
+  list-style: none;
+  cursor: pointer;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
