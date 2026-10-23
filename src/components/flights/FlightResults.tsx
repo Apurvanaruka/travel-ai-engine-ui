@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { BadgeCheck, Info, MapPin, Plane, Star, TriangleAlert, X } from "lucide-react";
+import { BadgeCheck, Hotel, Info, MapPin, Plane, Star, TriangleAlert, X } from "lucide-react";
 import type { FlightQuote, HotelQuote, TaskReply } from "../../types";
 import { money, paxSummary } from "../../utils/format";
 import { displayOf, type FlightDisplay } from "../../utils/flight";
@@ -593,18 +593,26 @@ function HotelFilterBar({
 }
 
 function HotelCard({ quote }: { quote: HotelQuote }) {
-  const { currency } = useStore();
+  const { currency, openCheckout } = useStore();
+  const handleClick = () => openCheckout(quote);
 
   return (
-    <div className="flight-card cursor-pointer p-4 transition">
+    <div className="flight-card cursor-pointer p-4 transition" onClick={handleClick}>
       <div className="flex items-start justify-between gap-2">
-        <div>
-          <div className="text-base font-semibold leading-5">{quote.hotel_name || "—"}</div>
-          <div className="mt-0.5 flex items-center gap-1 text-xs text-orn">
-            {Array.from({ length: quote.star_rating ?? 0 }).map((_, index) => (
-              <Star key={index} size={11} fill="currentColor" />
-            ))}
-            <span className="ml-1 text-dim">{quote.city}</span>
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="grid size-11 shrink-0 place-items-center rounded-lg border border-acc/30 bg-acc/10 text-acc2">
+            <Hotel size={20} />
+          </div>
+          <div className="min-w-0">
+            <div className="truncate text-base font-semibold leading-5">
+              {quote.hotel_name || "—"}
+            </div>
+            <div className="mt-0.5 flex items-center gap-1 text-xs text-orn">
+              {Array.from({ length: quote.star_rating ?? 0 }).map((_, index) => (
+                <Star key={index} size={11} fill="currentColor" />
+              ))}
+              <span className="ml-1 text-dim">{quote.city}</span>
+            </div>
           </div>
         </div>
         <Badge tone={quote.refundable ? "green" : "slate"}>
@@ -642,13 +650,25 @@ function HotelCard({ quote }: { quote: HotelQuote }) {
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between border-t border-edge pt-3">
-        <span className="text-lg font-bold">
-          {money(quote.total_price, quote.currency, currency)}
-        </span>
-        <span className="flex items-center gap-1 text-[11px] text-dim">
-          <Info size={11} /> total stay
-        </span>
+      <div className="mt-3 flex items-center justify-between gap-3 border-t border-edge pt-3">
+        <div className="flex items-center gap-2">
+          <span className="text-lg font-bold">
+            {money(quote.total_price, quote.currency, currency)}
+          </span>
+          <span className="flex items-center gap-1 text-[11px] text-dim">
+            <Info size={11} /> total stay
+          </span>
+        </div>
+        <Button
+          className="flex shrink-0 items-center gap-2 px-5 py-2.5"
+          onClick={(event) => {
+            event.stopPropagation();
+            handleClick();
+          }}
+        >
+          <BadgeCheck size={16} />
+          <span className="font-semibold">Book</span>
+        </Button>
       </div>
     </div>
   );

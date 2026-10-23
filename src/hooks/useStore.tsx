@@ -34,6 +34,7 @@ import type {
   ConversationUsageDTO,
   CurrencyCode,
   FlightQuote,
+  HotelQuote,
   LiveState,
   StreamEvent,
   ThemeMode,
@@ -155,8 +156,8 @@ interface StoreValue {
   live: LiveState;
   usageVersion: number;
   /* checkout */
-  checkoutQuote: FlightQuote | null;
-  openCheckout: (quote: FlightQuote) => void;
+  checkoutQuote: FlightQuote | HotelQuote | null;
+  openCheckout: (quote: FlightQuote | HotelQuote) => void;
   closeCheckout: () => void;
 }
 
@@ -190,7 +191,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [live, setLive] = useState<LiveState>(IDLE_LIVE);
   const [usageVersion, setUsageVersion] = useState(0);
-  const [checkoutQuote, setCheckoutQuote] = useState<FlightQuote | null>(null);
+  const [checkoutQuote, setCheckoutQuote] = useState<FlightQuote | HotelQuote | null>(null);
   const [envLabel, setEnvLabel] = useState("");
   const [options] = useState<{ search?: string }>({});
 
@@ -682,7 +683,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   /* ------------------------------- checkout ------------------------------- */
   const openCheckout = useCallback(
-    (quote: FlightQuote) => {
+    (quote: FlightQuote | HotelQuote) => {
       setCheckoutQuote(quote);
       navigate("/booking");
       window.scrollTo({ top: 0 });
