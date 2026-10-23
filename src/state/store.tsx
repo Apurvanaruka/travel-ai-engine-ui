@@ -41,6 +41,25 @@ export type View = "home" | "chat" | "checkout";
 export type CurrencyCode = "USD" | "INR" | "EUR";
 export type ThemeMode = "light" | "dark";
 
+/** Theme explicitly saved by the user, or null when they have not chosen one. */
+function readStoredTheme(): ThemeMode | null {
+  try {
+    const stored = localStorage.getItem("theme");
+    if (stored === "light" || stored === "dark") return stored;
+  } catch {
+    // Storage may be unavailable in private browsing.
+  }
+  return null;
+}
+
+/** The operating system / browser colour preference. */
+function readSystemTheme(): ThemeMode {
+  if (typeof window !== "undefined" && typeof window.matchMedia === "function") {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  return "light";
+}
+
 const IDLE_LIVE: LiveState = { active: false, text: "", tasks: {}, status: "Thinking • ", error: null };
 
 /** The conversation id carried by a location search string, if any. */
@@ -154,12 +173,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [chats, setChats] = useState<Chat[]>(() => [newChat()]);
   const [activeId, setActiveId] = useState<string>(() => chats[0].id);
   const [currency, setCurrency] = useState<CurrencyCode>("USD");
-  const [theme, setTheme] = useState<ThemeMode>(() => {
-    if (typeof window !== "undefined") {
-      return (localStorage.getItem("theme") as ThemeMode) || "light";
-    }
-    return "light";
+  const [{ theme: initialTheme, explicit: initialThemeExplicit }] = useState(() => {
+    const stored = readStoredTheme();
+    return { theme: stored ?? readSystemTheme(), explicit: stored !== null };
   });
+  const [theme, setThemeState] = useState<ThemeMode>(initialTheme);
+  /** Once the user picks a theme, stop following the device preference. */
+  const themeExplicitRef = useRef(initialThemeExplicit);
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [live, setLive] = useState<LiveState>(IDLE_LIVE);
   const [usageVersion, setUsageVersion] = useState(0);
@@ -235,12 +255,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (meta) {
       meta.setAttribute("content", theme === "light" ? "#ffffff" : "#0a0a0a");
     }
-    localStorage.setItem("theme", theme);
   }, [theme]);
 
+  /* Follow the device theme until the user makes an explicit choice. */
+  useEffect(() => {
+    if (themeExplicitRef.current) return;
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+
+    const query = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = (event: MediaQueryListEvent) => {
+      if (themeExplicitRef.current) return;
+      setThemeState(event.matches ? "dark" : "light");
+    };
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+  }, []);
+
+  const setTheme = useCallback((next: ThemeMode) => {
+    themeExplicitRef.current = true;
+    try {
+      localStorage.setItem("theme", next);
+    } catch {
+      // Storage may be unavailable in private browsing.
+    }
+    setThemeState(next);
+  }, []);
+
   const toggleDarkMode = useCallback(() => {
-    setTheme((t) => (t === "light" ? "dark" : "light"));
-  }, [setTheme]);
+    setTheme(theme === "light" ? "dark" : "light");
+  }, [setTheme, theme]);
 
   /* --------------------------------- auth -------------------------------- */
   const expired = (a: AuthStore) => !a.expires_at || a.expires_at - Date.now() / 1000 <= 30;

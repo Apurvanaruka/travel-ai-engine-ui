@@ -13,7 +13,7 @@ import { useStore, type CurrencyCode } from "../state/store";
 
 const CURRENCIES: CurrencyCode[] = ["USD", "INR", "EUR"];
 
-export function SettingsMenu() {
+export function SettingsMenu({ showLabel = false }: { showLabel?: boolean }) {
   const { theme, setTheme, currency, setCurrency, health } = useStore();
   const [open, setOpen] = useState(false);
   const [apiBase, setApiBaseDraft] = useState(() => getApiBase());
@@ -61,13 +61,18 @@ export function SettingsMenu() {
       <button
         type="button"
         onClick={() => (open ? setOpen(false) : openMenu())}
-        className="grid size-9 place-items-center rounded-xl text-mut transition hover:bg-card2 hover:text-txt"
+        className={
+          showLabel
+            ? "inline-flex h-9 items-center gap-2 rounded-xl border border-edge bg-card/90 px-3 text-xs font-semibold text-mut shadow-card backdrop-blur transition hover:border-edge2 hover:text-txt"
+            : "grid size-9 place-items-center rounded-xl text-mut transition hover:bg-card2 hover:text-txt"
+        }
         title="Settings"
         aria-label="Settings"
         aria-haspopup="dialog"
         aria-expanded={open}
       >
-        <Settings2 size={18} />
+        <Settings2 size={showLabel ? 16 : 18} />
+        {showLabel && <span>Settings</span>}
       </button>
 
       {open && (

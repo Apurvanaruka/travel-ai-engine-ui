@@ -6,7 +6,12 @@
       (function () {
         try {
           var t = localStorage.getItem("theme");
-          if (t === "dark") {
+          var dark =
+            t === "dark" ||
+            (t !== "light" &&
+              typeof window.matchMedia === "function" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) {
             document.documentElement.classList.remove("light");
             document.documentElement.classList.add("dark");
             document.documentElement.style.colorScheme = "dark";

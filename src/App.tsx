@@ -2,12 +2,12 @@ import { StoreProvider, useStore } from "./state/store";
 import { TopBar } from "./components/TopBar";
 import { Sidebar } from "./components/Sidebar";
 import { ComposerDock } from "./components/ComposerDock";
-import { LoginView } from "./components/LoginView";
+import { AuthView } from "./components/AuthView";
 import { ChatView } from "./components/ChatView";
 import { CheckoutView } from "./components/CheckoutView";
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useParams } from "react-router-dom";
 
-/* Public layout - for login page */
+/* Public layout - for the login and registration pages */
 function PublicLayout() {
   return <Outlet />;
 }
@@ -65,7 +65,10 @@ export default function App() {
         <Routes>
           {/* Public routes */}
           <Route element={<PublicLayout />}>
-            <Route path="/login" element={<LoginView />} />
+            <Route path="/login" element={<AuthView mode="login" />} />
+            <Route path="/register" element={<AuthView mode="register" />} />
+            {/* Common misspelling of /register - keep old links working. */}
+            <Route path="/registor" element={<Navigate to="/register" replace />} />
           </Route>
 
           {/* Protected routes with sidebar/topbar */}
