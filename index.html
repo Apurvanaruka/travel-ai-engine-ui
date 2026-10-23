@@ -1,21 +1,23 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en" class="light">
   <head>
     <meta charset="UTF-8" />
     <script>
       (function () {
         try {
           var t = localStorage.getItem("theme");
-          if (t === "light") {
+          if (t === "dark") {
+            document.documentElement.classList.remove("light");
+            document.documentElement.classList.add("dark");
+            document.documentElement.style.colorScheme = "dark";
+            var m = document.querySelector('meta[name="theme-color"]');
+            if (m) m.setAttribute("content", "#0a0a0a");
+          } else {
             document.documentElement.classList.remove("dark");
             document.documentElement.classList.add("light");
             document.documentElement.style.colorScheme = "light";
             var m = document.querySelector('meta[name="theme-color"]');
             if (m) m.setAttribute("content", "#ffffff");
-          } else {
-            document.documentElement.classList.remove("light");
-            document.documentElement.classList.add("dark");
-            document.documentElement.style.colorScheme = "dark";
           }
         } catch (e) {}
       })();

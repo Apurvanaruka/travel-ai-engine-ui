@@ -1,1 +1,0 @@
-src/components/FlightCard.tsx(445,9): error TS6133: 'currency' is declared but its value is never read.

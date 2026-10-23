@@ -1,11 +1,21 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
+import type { PendingInput } from "../lib/types";
 import {
   Bot,
   Clock3,
   Mic,
   Paperclip,
   SendHorizontal,
+  Plane,
+  Hotel,
+  Bus,
+  CalendarDays,
+  ArrowUpRight,
+  ShieldCheck,
+  Sparkles,
+  MapPin,
+  User,
 } from "lucide-react";
 import { useStore } from "../state/store";
 import type { ChatMessage, FlightQuote, TaskReply } from "../lib/types";
@@ -13,6 +23,8 @@ import { FlightResults, HotelResults } from "./FlightCard";
 import { TracePanel } from "./TracePanel";
 import { Spinner } from "./bits";
 import { clockTime, dayLabel } from "../lib/format";
+import { Logo } from "./Logo";
+
 
 /** True when a task result carries a quote-analysis answer. */
 function isAnalysisResult(result: TaskReply): boolean {
@@ -41,10 +53,10 @@ function AssistantFrame({
       </div>
       <div className="card min-w-0 flex-1 overflow-hidden">
         <div className="flex flex-wrap items-center gap-2 border-b border-edge px-4 py-2.5">
-          <span className="text-[11px] font-bold tracking-[0.12em] text-acc2">AI TRAVEL COPILOT</span>
+          <span className="text-[11px] font-bold tracking-[0.12em] text-acc2">AI TRAVEL ENGINE</span>
           <span className="size-1.5 rounded-full bg-acc2/60" />
           <span className="text-[11px] text-mut">
-            {health ? `Live inventory \u00b7 ${health.environment}` : "Connecting to inventory"}
+            {health ? `Live inventory · ${health.environment}` : "Connecting to inventory"}
           </span>
           <div className="flex-1" />
           {meta && (
@@ -61,18 +73,29 @@ function AssistantFrame({
   );
 }
 
-function MessageView({ message }: { message: ChatMessage }) {
-  if (message.role === "user") {
-    return (
-      <div className="flex flex-col items-end">
-        <div className="max-w-[75%] rounded-2xl rounded-br-md bg-acc px-4 py-3 text-[14px] leading-6 text-white shadow-glow">
-          {message.content}
+function UserMessage({ message }: { message: ChatMessage }) {
+  return (
+    <div className="flex flex-col items-end">
+      <div className="flex items-start gap-3 w-full max-w-[80%]">
+        <div className="flex-1 min-w-0">
+          <div className="rounded-2xl rounded-bl-md bg-acc px-4 py-3 text-[14px] leading-6 text-white shadow-glow">
+            {message.content}
+          </div>
+          <div className="mt-1.5 flex items-center justify-end gap-2 text-[10.5px] text-dim">
+            {dayLabel(message.at)} at {clockTime(message.at)}  •  Sent via Web
+          </div>
         </div>
-        <div className="mt-1.5 flex items-center gap-2 text-[10.5px] text-dim">
-          {dayLabel(message.at)} at {clockTime(message.at)}  •  Sent via Web
+        <div className="grid size-9 shrink-0 place-items-center rounded-lg border border-edge bg-card text-acc2">
+          <User size={17} />
         </div>
       </div>
-    );
+    </div>
+  );
+}
+
+function MessageView({ message }: { message: ChatMessage }) {
+  if (message.role === "user") {
+    return <UserMessage message={message} />;
   }
 
   const results = message.results ?? [];
@@ -83,7 +106,7 @@ function MessageView({ message }: { message: ChatMessage }) {
   const showText = hasAnalysis || !results.length || hasEmptyCompleted;
   const count = quoteCount(message);
   const latency = message.usage?.total_latency_ms ? (message.usage.total_latency_ms / 1000).toFixed(1) : null;
-  const meta = count ? `${count} options synthesized in ${latency ?? "0.8"}s` : latency ? `synthesized in ${latency}s` : undefined;
+  const meta = count ? `${count} options in ${latency ?? "0.8"}s` : latency ? ` in ${latency}s` : undefined;
 
   return (
     <AssistantFrame meta={meta} conversationId={message.conversation_id}>
@@ -145,7 +168,7 @@ function LiveView() {
                     : "border-edge bg-card2 text-dim"
               }`}
             >
-              {t.status === "completed" ? "?" : t.status === "running" ? "?" : " • "} {t.label}
+              {t.status === "completed" ? "✓" : t.status === "running" ? "⟳" : "•"} {t.label}
             </span>
           ))}
         </div>
@@ -156,21 +179,133 @@ function LiveView() {
 }
 
 /** Welcome / shortcut state shown while a thread has no messages yet. */
-function EmptyThread() {
+function EmptyThread({ 
+  onSelect, 
+  submit, 
+  pending, 
+  live 
+}: { 
+  onSelect: (prompt: string) => void;
+  submit: (text: string, resume: boolean) => void;
+  pending: PendingInput | null;
+  live: { active: boolean };
+}) {
+  const [input, setInput] = useState("");
   const { auth } = useStore();
   const name = (auth.email ?? "traveler").split("@")[0].split(/[._-]/)[0];
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
+  const suggestions = [
+    { title: "Find flights", subtitle: "Mumbai → Delhi", prompt: "Find flights from Mumbai to Delhi on tomorrow", icon: Plane },
+    { title: "Find hotels", subtitle: "Delhi, near airport", prompt: "Find hotels in Delhi near the airport from next monday to friday", icon: Hotel },
+    { title: "Find Flight & Hotels", subtitle: "Delhi → Agra", prompt: "Find flights from Delhi to Agra on 5 nov and hotel from 5 nov to 10 nov", icon: Plane },
+    { title: "Modify existing trip", subtitle: "Change dates or passengers", prompt: "Help me modify my existing trip", icon: CalendarDays },
+  ];
+
   return (
-    <div className="pt-6">
-      <div className="flex flex-col items-center text-center">
-        <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-txt md:text-[40px]">
-          {greeting}, <span className="capitalize">{name}</span>.
-        </h1>
-        <p className="mt-2 max-w-xl text-sm text-mut">
-          Where can Infarsight AI take your team next?
-        </p>
+    <div className="relative flex min-h-[calc(100dvh-170px)] flex-col items-center justify-center overflow-hidden px-1 pb-8 pt-8 sm:px-4">
+      <div aria-hidden="true" className="pointer-events-none absolute right-[3%] top-[4%] hidden h-64 w-64 items-center justify-center rounded-full bg-acc/[0.045] md:flex">
+        <div className="absolute inset-5 rounded-full border border-dashed border-acc/15" />
+        <div className="absolute inset-12 rounded-full border border-acc/10" />
+        <div className="absolute right-5 top-10 grid size-11 place-items-center rounded-2xl bg-card text-acc shadow-sm">
+         <Plane size={20} />
+        </div>
+        <div className="absolute bottom-12 left-8 grid size-10 place-items-center rounded-full bg-acc/10 text-acc">
+          <MapPin size={20} />
+        </div>
+        <div className="absolute left-12 top-12 size-2 rounded-full bg-acc/30" />
+      </div>
+
+      <div className="relative z-10 w-full max-w-4xl flex flex-col items-center">
+        <div className="mx-auto flex max-w-3xl flex-col items-center text-center mb-8">
+          <div className="mb-5 grid size-14 place-items-center rounded-2xl border border-acc/15 bg-card text-acc shadow-sm">
+            <Logo variant="mark" height="26px" />
+          </div>
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-edge bg-card/80 px-3 py-1.5 text-[11px] font-semibold text-mut shadow-sm">
+            <Sparkles size={13} className="text-acc" />
+            YOUR AI-POWERED TRAVEL ASSISTANT
+          </div>
+          <h1 className="text-3xl font-bold leading-tight tracking-tight text-txt sm:text-4xl md:text-5xl">
+            {greeting}, <span className="capitalize">{name}</span>.
+          </h1>
+          <p className="mt-4 max-w-xl text-sm leading-6 text-mut sm:text-base">
+            Where can Infarsight AI take your team next?
+            <span className="mt-1 block text-xs sm:text-sm">
+              Plan a trip, compare options, or update an existing itinerary — just ask.
+            </span>
+          </p>
+        </div>
+
+        {/* Centered composer on empty state */}
+        <div className="w-full max-w-2xl mx-auto mb-8">
+          <div className="mx-auto flex max-w-5xl items-center gap-3 rounded-2xl border border-edge bg-card px-3 py-2.5 shadow-[0_12px_40px_rgba(37,99,235,0.12)] focus-within:border-acc/50 focus-within:ring-4 focus-within:ring-acc/5 sm:px-4">
+            <button className="text-dim hover:text-mut" title="Attach" aria-label="Attach file">
+              <Paperclip size={16} />
+            </button>
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  submit(input, !!pending);
+                }
+              }}
+              placeholder={
+                pending
+                  ? `Your answer  •  ${pending.prompt}`
+                  : "e.g., Change date to 30 Oct, add return flight on 5 Nov, or filter non-stop only..."
+              }
+              className="min-w-0 flex-1 bg-transparent py-2 text-base outline-none text-txt placeholder:text-dim sm:text-[15px]"
+              autoFocus
+            />
+            <button className="text-dim hover:text-mut" title="Voice" aria-label="Voice input">
+              <Mic size={16} />
+            </button>
+            <button
+              className="grid size-10 shrink-0 place-items-center rounded-xl bg-acc text-white shadow-sm transition hover:bg-acc/85 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={live.active || !input.trim()}
+              onClick={() => submit(input, !!pending)}
+              title="Send"
+              aria-label="Send message"
+            >
+              {live.active ? <Spinner size={14} className="border-white/30 border-t-white" /> : <SendHorizontal size={16} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Quick action suggestions below composer */}
+        <div className="w-full max-w-4xl">
+          <p className="text-center text-[11px] text-dim mb-4">Or start with a quick action:</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {suggestions.map(({ title, subtitle, prompt, icon: Icon }) => (
+              <button
+                key={title}
+                type="button"
+                onClick={() => onSelect(prompt)}
+                className="group flex min-w-0 items-center gap-3 rounded-2xl border border-edge bg-card/90 p-3.5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-acc/40 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+              >
+                <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-acc/8 text-acc transition group-hover:bg-acc/12">
+                  <Icon size={20} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13px] font-semibold text-txt">{title}</span>
+                  <span className="mt-1 block truncate text-[11px] text-mut">{subtitle}</span>
+                </span>
+                <ArrowUpRight size={15} className="shrink-0 text-dim transition group-hover:text-acc" />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] text-mut">
+          <span className="inline-flex items-center gap-1.5"><ShieldCheck size={14} className="text-grn" /> Secure</span>
+          <span className="hidden h-3 w-px bg-edge sm:block" />
+          <span>Fast</span>
+          <span className="hidden h-3 w-px bg-edge sm:block" />
+          <span className="inline-flex items-center gap-1.5"><Sparkles size={13} className="text-acc" /> AI powered</span>
+        </div>
       </div>
     </div>
   );
@@ -180,7 +315,6 @@ export function ChatView() {
   const [searchParams] = useSearchParams();
   const conversationId = searchParams.get("conversation");
   const { activeChat, live, send, initConversationFromUrl } = useStore();
-  const [input, setInput] = useState("");
   const scroller = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -202,72 +336,40 @@ export function ChatView() {
 
   const pending = activeChat.pending;
 
-  const submit = (text: string, resume = false) => {
-    const value = text.trim();
-    if (!value || live.active) return;
-    setInput("");
-    void send(value, resume);
-  };
+  const isEmptyThread = !activeChat.messages.length && !live.active && !pending;
 
   return (
-    <div ref={scroller} className="flex h-full min-h-0 flex-col bg-night text-txt">
-      <div className="mx-auto w-full max-w-4xl flex-1 space-y-6 px-4 py-6 pb-24 relative">
-        {!activeChat.messages.length && !live.active && !pending && (
-          <EmptyThread />
+    <div ref={scroller} className="flex h-full min-h-0 flex-col overflow-y-auto bg-panel text-txt">
+      <div className="relative mx-auto flex w-full max-w-[1440px] flex-1 flex-col px-4 py-4 pb-32 sm:px-6 sm:py-6 lg:px-8">
+        {isEmptyThread && (
+          <EmptyThread
+            onSelect={(prompt) => send(prompt, false)}
+            submit={(text, resume) => void send(text, resume)}
+            pending={pending}
+            live={live}
+          />
         )}
-        {activeChat.messages.map((m, i) =>
-          // the active clarification question is rendered prominently below  • 
-          // skip its duplicate in the history loop (same rule as reference UI)
-          pending && m.role === "assistant" && m.content === pending.prompt ? null : (
-            <MessageView key={i} message={m} />
-          ),
-        )}
-        {live.active && <LiveView />}
-        {pending && !live.active && (
+        {!isEmptyThread && (
           <>
-            <AssistantFrame>
-              <div className="text-[15px] font-bold leading-6 text-txt">{pending.prompt}</div>
-            </AssistantFrame>
-            <div className="pl-12 text-[11px] text-dim">Reply in the box below to continue.</div>
+            <div className="space-y-6">
+              {activeChat.messages.map((m, i) =>
+                pending && m.role === "assistant" && m.content === pending.prompt ? null : (
+                  <MessageView key={i} message={m} />
+                ),
+              )}
+              {live.active && <LiveView />}
+              {pending && !live.active && (
+                <>
+                  <AssistantFrame>
+                    <div className="text-[15px] font-bold leading-6 text-txt">{pending.prompt}</div>
+                  </AssistantFrame>
+                  <div className="pl-12 text-[11px] text-dim">Reply in the box below to continue.</div>
+                </>
+              )}
+            </div>
+            <div ref={bottomRef} />
           </>
         )}
-        <div ref={bottomRef} />
-
-        {/* composer dock */}
-        <div className="absolute bottom-0 left-0 right-0 z-10 w-full border-t border-edge bg-panel/95 px-4 pb-4 pt-3 backdrop-blur">
-          <div className="flex items-center gap-2 rounded-xl border border-edge bg-card2 px-3 py-2 shadow-sm focus-within:border-acc/60">
-            <button className="text-dim hover:text-mut" title="Attach">
-              <Paperclip size={16} />
-            </button>
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  submit(input, !!pending);
-                }
-              }}
-              placeholder={
-                pending
-                  ? `Your answer  •  ${pending.prompt}`
-                  : "e.g., Change date to 30 Oct, add return flight on 5 Nov, or filter non-stop only..."
-              }
-              className="min-w-0 flex-1 bg-transparent text-sm outline-none text-txt placeholder:text-dim"
-            />
-            <button className="text-dim hover:text-mut" title="Voice">
-              <Mic size={16} />
-            </button>
-            <button
-              className="grid size-9 shrink-0 place-items-center rounded-lg bg-acc text-white transition hover:bg-acc/85 disabled:opacity-50"
-              disabled={live.active || !input.trim()}
-              onClick={() => submit(input, !!pending)}
-              title="Send"
-            >
-              {live.active ? <Spinner size={14} className="border-white/30 border-t-white" /> : <SendHorizontal size={16} />}
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

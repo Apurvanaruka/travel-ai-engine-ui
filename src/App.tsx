@@ -1,6 +1,7 @@
 import { StoreProvider, useStore } from "./state/store";
 import { TopBar } from "./components/TopBar";
 import { Sidebar } from "./components/Sidebar";
+import { ComposerDock } from "./components/ComposerDock";
 import { LoginView } from "./components/LoginView";
 import { ChatView } from "./components/ChatView";
 import { CheckoutView } from "./components/CheckoutView";
@@ -13,16 +14,20 @@ function PublicLayout() {
 
 /* Private layout - requires authentication */
 function PrivateLayout() {
-  const { loggedIn } = useStore();
+  const { loggedIn, view } = useStore();
   if (!loggedIn) return <Navigate to="/login" replace />;
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-night text-txt">
-      <TopBar />
-      <div className="flex min-h-0 flex-1">
-        <Sidebar />
+    <div className="flex h-screen overflow-hidden bg-night text-txt">
+      <Sidebar />
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         <main className="min-w-0 flex-1 overflow-y-auto bg-night text-txt">
-          <Outlet />
+          <TopBar />
+          <div className="pt-2 pb-8 px-6">
+            <Outlet />
+          </div>
         </main>
+        {/* Composer dock at layout level - automatically spans from sidebar edge to right */}
+        {(view === "chat" || view === "home") && <ComposerDock />}
       </div>
     </div>
   );

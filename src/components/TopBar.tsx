@@ -1,101 +1,70 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  Settings,
-  Sun,
-  Moon,
-} from "lucide-react";
-import { Logo } from "./Logo";
 import { useStore } from "../state/store";
-import { getApiBase, setApiBase } from "../lib/api";
-
+import { Sun, Moon, Clock3 } from "lucide-react";
+import { Logo } from "./Logo";
+import { SettingsMenu } from "./SettingsMenu";
 
 export function TopBar() {
-  const { auth, logout, theme, setTheme } = useStore();
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [apiBase, setApiBaseLocal] = useState(getApiBase());
-  const popRef = useRef<HTMLDivElement>(null);
+  const { toggleDarkMode, theme, activeChat } = useStore();
 
-  useEffect(() => {
-    const onDown = (e: MouseEvent) => {
-      if (popRef.current && !popRef.current.contains(e.target as Node)) setSettingsOpen(false);
-    };
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, []);
+  const totalQuotes = activeChat.messages.reduce(
+    (total, message) =>
+      total +
+      (message.results ?? []).reduce(
+        (count, result) => count + (result.quotes?.length ?? 0),
+        0,
+      ),
+    0,
+  );
+
+  const lastUsage = activeChat.messages[activeChat.messages.length - 1]?.usage;
+  const latency = lastUsage?.total_latency_ms
+    ? (lastUsage.total_latency_ms / 1000).toFixed(1)
+    : null;
 
   return (
-    <header className="relative z-40 flex h-14 shrink-0 items-center gap-3 border-b border-edge bg-panel px-4 text-txt">
-      {/* brand */}
-      <div className="flex items-center gap-2.5">
-        <Logo className="shrink-0" />
+    <header className="sticky top-0 z-20 flex min-h-[68px] items-center justify-between gap-4 border-b border-edge bg-card/90 px-4 py-3 backdrop-blur-xl md:px-6">
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-acc/10 text-acc">
+          <Logo variant="mark" height="26px" />
+        </div>
+        <div className="min-w-0">
+          <div className="truncate text-[15px] font-bold tracking-tight text-txt">
+            AI Travel Engine
+          </div>
+     
+        </div>
       </div>
 
-      <div className="flex-1" />
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+        {(totalQuotes > 0 || latency) && (
+          <div className="hidden items-center gap-2 text-xs text-mut lg:flex">
+            <Clock3 size={15} className="text-acc" />
+            <span>
+              {totalQuotes > 0 && (
+                <>
+                  <strong className="font-semibold text-txt">{totalQuotes}</strong>{" "}
+                  option{totalQuotes === 1 ? "" : "s"}
+                </>
+              )}
+              {totalQuotes > 0 && latency ? "" : ""}
+              {totalQuotes === 0 && latency ? "Elapsed " : ""}
+              {latency && <strong className="font-semibold text-txt">{latency}s</strong>}
+            </span>
+          </div>
+        )}
 
-      {/* Quick theme toggle */}
-      <button
-        className="icon-btn"
-        onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-        title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
-      >
-        {theme === "light" ? <Moon size={17} /> : <Sun size={17} />}
-      </button>
-
-      <button className="icon-btn" title="Settings" onClick={() => setSettingsOpen((v) => !v)}>
-        <Settings size={17} />
-      </button>
-
-      {/* settings popover */}
-      {settingsOpen && (
-        <div
-          ref={popRef}
-          className="card absolute right-4 top-14 w-80 animate-fadeUp p-4"
+        <button
+          type="button"
+          onClick={toggleDarkMode}
+          className="grid size-9 place-items-center rounded-xl text-mut transition hover:bg-card2 hover:text-txt"
+          title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+          aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
         >
-          <div className="mb-2 text-sm font-semibold">Workspace settings</div>
-          
-          {/* Theme toggle */}
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <div className="text-sm font-medium">Appearance</div>
-              <div className="text-[11px] text-dim">Choose your preferred color theme</div>
-            </div>
-            <button
-              className="btn-ghost px-3 py-1.5"
-              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-              title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
-            >
-              {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
-            </button>
-          </div>
+          {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
+        </button>
 
-          <label className="field-label">Backend API base URL</label>
-          <div className="flex gap-2">
-            <input
-              value={apiBase}
-              onChange={(e) => setApiBaseLocal(e.target.value)}
-              className="inset w-full px-2.5 py-1.5 font-mono text-[11px] outline-none focus:border-acc/60"
-            />
-            <button
-              className="btn-ghost px-3 py-1.5 text-xs"
-              onClick={() => {
-                setApiBase(apiBase);
-                window.location.reload();
-              }}
-            >
-              Save
-            </button>
-          </div>
-          <div className="mt-3 flex items-center justify-between border-t border-edge pt-3">
-            <div className="min-w-0">
-              <div className="truncate text-xs font-semibold">{auth.email}</div>
-              <div className="text-[10px] text-dim">Authenticated user</div>
-            </div>
-            <button className="btn-ghost px-3 py-1.5 text-xs" onClick={logout}>
-              Log out
-            </button>
-          </div>
-        </div>
-      )}
+        <SettingsMenu />
+      </div>
     </header>
   );
 }

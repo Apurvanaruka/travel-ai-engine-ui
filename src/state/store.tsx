@@ -111,6 +111,11 @@ interface StoreValue {
   theme: ThemeMode;
   setTheme: (t: ThemeMode) => void;
   health: HealthStatus | null;
+  /* env label / options */
+  envLabel: string;
+  setEnvLabel: (label: string) => void;
+  options: { search?: string };
+  toggleDarkMode: () => void;
   /* chats */
   chats: Chat[];
   activeChat: Chat;
@@ -151,14 +156,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [currency, setCurrency] = useState<CurrencyCode>("USD");
   const [theme, setTheme] = useState<ThemeMode>(() => {
     if (typeof window !== "undefined") {
-      return (localStorage.getItem("theme") as ThemeMode) || "dark";
+      return (localStorage.getItem("theme") as ThemeMode) || "light";
     }
-    return "dark";
+    return "light";
   });
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [live, setLive] = useState<LiveState>(IDLE_LIVE);
   const [usageVersion, setUsageVersion] = useState(0);
   const [checkoutQuote, setCheckoutQuote] = useState<FlightQuote | null>(null);
+  const [envLabel, setEnvLabel] = useState("");
+  const [options] = useState<{ search?: string }>({});
 
   /* ------------------------- thread isolation ---------------------------- */
   /** Abort handle for the in-flight SSE stream of the current thread. */
@@ -230,6 +237,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
     localStorage.setItem("theme", theme);
   }, [theme]);
+
+  const toggleDarkMode = useCallback(() => {
+    setTheme((t) => (t === "light" ? "dark" : "light"));
+  }, [setTheme]);
 
   /* --------------------------------- auth -------------------------------- */
   const expired = (a: AuthStore) => !a.expires_at || a.expires_at - Date.now() / 1000 <= 30;
@@ -632,6 +643,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     theme,
     setTheme,
     health,
+    envLabel,
+    setEnvLabel,
+    options,
+    toggleDarkMode,
     chats,
     activeChat,
     setActiveId: (id) => {

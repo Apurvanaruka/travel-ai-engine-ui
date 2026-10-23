@@ -6,6 +6,7 @@ import {
   TriangleAlert,
   Star,
   X,
+  Plane,
 } from "lucide-react";
 import type { FlightQuote, HotelQuote, TaskReply } from "../lib/types";
 import {
@@ -19,7 +20,7 @@ import {
   titleCase,
   type CurrencyCode,
 } from "../lib/format";
-import { AirlineSquare, Badge, Chip, RouteLine } from "./bits";
+import { AirlineSquare, Badge, Chip } from "./bits";
 import { useStore } from "../state/store";
 
 /* ------------------------- quote → display model ------------------------- */
@@ -177,69 +178,120 @@ function FeaturedFlightCard({ quote, onSelect }: { quote: FlightQuote; onSelect:
 
   return (
     <div 
-      className="card p-4 transition hover:border-edge2 cursor-pointer hover:bg-card2/50"
+      className="flight-card p-5 transition cursor-pointer"
       onClick={handleClick}
     >
-      <div className="flex items-start gap-3">
-        <AirlineSquare code={d.code} size={38} />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[15px] font-semibold leading-5">{d.airlineNames}</span>
-            <Chip>{d.carriers}</Chip>
-          </div>
-          <div className="mt-1 text-xs text-mut">
-            {d.aircraft} • {d.cabin}
+      <div className="flex items-start gap-4">
+        {/* Airline info */}
+        <div className="flex items-center gap-3">
+          <AirlineSquare code={d.code} size={44} />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-base font-semibold leading-5 text-txt">{d.airlineNames}</span>
+              <Chip>{d.carriers}</Chip>
+            </div>
+            <div className="mt-1 text-xs text-mut">
+              {d.aircraft} • {d.cabin}
+            </div>
           </div>
         </div>
+        
+        {/* Layover/Non-stop badge at top-right */}
+        <div className="flex-1" />
         {d.stops > 0 ? (
-          <Badge tone="orange">
-            {d.duration} Layover in {d.stopCodes[0] ?? "—"}
-          </Badge>
+          <span className="badge-orn shrink-0">
+            {d.duration} · {d.stops} stop{d.stops > 1 ? "s" : ""} via {d.stopCodes[0] ?? "—"}
+          </span>
         ) : (
-          <Badge tone="green">Non-stop</Badge>
+          <span className="badge-grn shrink-0">Non-stop</span>
         )}
       </div>
 
-      <div className="mt-4 grid grid-cols-[1fr_minmax(0,2fr)_1fr] items-center gap-4">
-        <div>
-          <div className="font-mono text-xl font-bold">{d.depTime}</div>
-          <div className="text-xs text-mut">
-            {d.depCode}
-            {d.depTerminal && ` · T${d.depTerminal}`}
+      {/* Flight timeline */}
+      <div className="mt-5 relative">
+        <div className="flex items-center gap-4 relative">
+          {/* Departure */}
+          <div className="flex-1 min-w-0 text-left">
+            <div className="font-mono text-2xl font-bold text-txt">{d.depTime}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-sm text-mut">
+              <MapPin size={12} className="text-dim" />
+              <span className="font-medium text-txt">{d.depCode}</span>
+              {d.depTerminal && <span className="text-dim">· T{d.depTerminal}</span>}
+              {d.depName && <span className="hidden md:inline text-dim">· {d.depName}</span>}
+            </div>
           </div>
-        </div>
-        <div>
-          <div className="mb-1 text-center font-mono text-[11px] text-mut">
-            {d.duration}
-            {d.stops > 0 && ` (${d.stops} stop ${d.stopCodes.join(" ")})`}
+
+          {/* Timeline with plane and stops */}
+          <div className="flex-1 relative min-w-0">
+            <div className="relative h-8">
+              <div className="absolute left-0 right-0 top-1/2 h-[2px] -translate-y-1/2 rounded bg-edge2" />
+              <div className="absolute left-0 top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-acc2" />
+              <div className="absolute right-0 top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-acc2" />
+              
+              {/* Stop dots */}
+              {d.stopCodes.length > 0 && d.stopCodes.map((code, i) => (
+                <div
+                  key={code}
+                  title={code}
+                  className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-orn"
+                  style={{ left: `${((i + 1) / (d.stopCodes.length + 1)) * 100}%` }}
+                />
+              ))}
+              
+              {/* Plane icon in center */}
+              <div className="absolute left-1/2 top-1/2 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-card px-1.5 border border-edge">
+                <Plane size={14} className="text-acc2" style={{ transform: "rotate(45deg)" }} />
+              </div>
+            </div>
+            
+            {/* Duration and stops info */}
+            <div className="mt-2 text-center text-xs text-mut">
+              {d.duration}
+              {d.stops > 0 && ` · ${d.stops} stop${d.stops > 1 ? "s" : ""}`}
+            </div>
+            <div className="mt-1 text-center text-xs text-dim">
+              {d.stops === 0 ? "Non-stop" : `Connect via ${d.stopCodes.join(", ")}`}
+            </div>
           </div>
-          <RouteLine stops={d.stops} stopCodes={d.stopCodes} />
-          <div className="mt-1 text-center text-[11px] text-dim">
-            {d.stops === 0 ? "Non-stop" : `Connect via ${d.stopCodes.join(", ")}`}
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="font-mono text-xl font-bold">
-            {d.arrTime}
-            {d.dayBadge && <span className="ml-1 font-mono text-[10px] font-bold text-orn">{d.dayBadge}</span>}
-          </div>
-          <div className="text-xs text-mut">
-            {d.arrCode}
-            {d.arrTerminal && ` · T${d.arrTerminal}`}
+
+          {/* Arrival */}
+          <div className="flex-1 min-w-0 text-right">
+            <div className="font-mono text-2xl font-bold text-txt">
+              {d.arrTime}
+              {d.dayBadge && <span className="ml-1.5 font-mono text-xs font-bold text-orn">{d.dayBadge}</span>}
+            </div>
+            <div className="flex items-center gap-1.5 mt-1 justify-end text-sm text-mut">
+              {d.arrTerminal && <span className="text-dim">T{d.arrTerminal} ·</span>}
+              <span className="font-medium text-txt">{d.arrCode}</span>
+              <MapPin size={12} className="text-dim" />
+              {d.arrName && <span className="hidden md:inline text-dim">· {d.arrName}</span>}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-3 border-t border-edge pt-3">
-        <span className="text-lg font-bold">{money(quote.total_price, quote.currency, currency)}</span>
-        <span className="text-[11px] text-dim">{paxSummary(quote) || "per quote"}</span>
-        <div className="flex-1" />
+      {/* Price and book section */}
+      <div className="mt-5 flex items-center justify-between gap-4 border-t border-edge pt-4">
+        <div className="flex items-center gap-3">
+          <span className="text-xl font-bold text-txt tabular-nums">{money(quote.total_price, quote.currency, currency)}</span>
+          <span className="text-[11px] text-dim">{paxSummary(quote) || "per quote"}</span>
+          {d.bagPieces != null && (
+            <span className="flex items-center gap-1 text-[11px] text-mut border-l border-edge pl-3">
+              <span>{d.bagPieces}× {d.bagKg ?? "—"}kg</span>
+            </span>
+          )}
+          {d.refundable && (
+            <span className="flex items-center gap-1 text-[11px] text-grn border-l border-edge pl-3">
+              <Badge tone="green">Refundable</Badge>
+            </span>
+          )}
+        </div>
         <button 
-          className="btn-primary px-5" 
+          className="btn-primary px-6 py-2.5 flex items-center gap-2 shrink-0" 
           onClick={(e) => { e.stopPropagation(); handleClick(); }}
         >
-          <BadgeCheck size={15} />
-          Book
+          <BadgeCheck size={16} />
+          <span className="font-semibold">Book</span>
         </button>
       </div>
     </div>
@@ -266,71 +318,122 @@ function StandardFlightCard({
 
   return (
     <div 
-      className="card p-4 transition hover:border-edge2 cursor-pointer hover:bg-card2/50"
+      className="flight-card p-5 transition cursor-pointer"
       onClick={handleClick}
     >
-      <div className="flex items-start gap-3">
-        <AirlineSquare code={d.code} size={38} />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[15px] font-semibold leading-5">{d.airlineNames}</span>
-            <Chip>{d.carriers}</Chip>
-          </div>
-          <div className="mt-1 text-xs text-mut">
-            {d.aircraft} • {d.cabin}
+      <div className="flex items-start gap-4">
+        {/* Airline info */}
+        <div className="flex items-center gap-3">
+          <AirlineSquare code={d.code} size={44} />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-base font-semibold leading-5 text-txt">{d.airlineNames}</span>
+              <Chip>{d.carriers}</Chip>
+            </div>
+            <div className="mt-1 text-xs text-mut">
+              {d.aircraft} • {d.cabin}
+            </div>
           </div>
         </div>
+        
+        {/* Badge at top-right */}
+        <div className="flex-1" />
         {isCheapest ? (
-          <Badge tone="green">Best Value</Badge>
+          <Badge tone="green" className="shrink-0">Best Value</Badge>
         ) : d.stops > 0 ? (
-          <Badge tone="orange">
-            {d.duration} Layover in {d.stopCodes[0] ?? "—"}
-          </Badge>
+          <span className="badge-orn shrink-0">
+            {d.duration} · {d.stops} stop{d.stops > 1 ? "s" : ""} via {d.stopCodes[0] ?? "—"}
+          </span>
         ) : (
-          <Badge tone="green">Non-stop</Badge>
+          <span className="badge-grn shrink-0">Non-stop</span>
         )}
       </div>
 
-      <div className="mt-4 grid grid-cols-[1fr_minmax(0,2fr)_1fr] items-center gap-4">
-        <div>
-          <div className="font-mono text-xl font-bold">{d.depTime}</div>
-          <div className="text-xs text-mut">
-            {d.depCode}
-            {d.depTerminal && ` · T${d.depTerminal}`}
+      {/* Flight timeline */}
+      <div className="mt-5 relative">
+        <div className="flex items-center gap-4 relative">
+          {/* Departure */}
+          <div className="flex-1 min-w-0 text-left">
+            <div className="font-mono text-2xl font-bold text-txt">{d.depTime}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-sm text-mut">
+              <MapPin size={12} className="text-dim" />
+              <span className="font-medium text-txt">{d.depCode}</span>
+              {d.depTerminal && <span className="text-dim">· T{d.depTerminal}</span>}
+              {d.depName && <span className="hidden md:inline text-dim">· {d.depName}</span>}
+            </div>
           </div>
-        </div>
-        <div>
-          <div className="mb-1 text-center font-mono text-[11px] text-mut">
-            {d.duration}
-            {d.stops > 0 && ` (${d.stops} stop ${d.stopCodes.join(" ")})`}
+
+          {/* Timeline with plane and stops */}
+          <div className="flex-1 relative min-w-0">
+            <div className="relative h-8">
+              <div className="absolute left-0 right-0 top-1/2 h-[2px] -translate-y-1/2 rounded bg-edge2" />
+              <div className="absolute left-0 top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-acc2" />
+              <div className="absolute right-0 top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-acc2" />
+              
+              {/* Stop dots */}
+              {d.stopCodes.length > 0 && d.stopCodes.map((code, i) => (
+                <div
+                  key={code}
+                  title={code}
+                  className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-orn"
+                  style={{ left: `${((i + 1) / (d.stopCodes.length + 1)) * 100}%` }}
+                />
+              ))}
+              
+              {/* Plane icon in center */}
+              <div className="absolute left-1/2 top-1/2 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-card px-1.5 border border-edge">
+                <Plane size={14} className="text-mut" style={{ transform: "rotate(45deg)" }} />
+              </div>
+            </div>
+            
+            {/* Duration and stops info */}
+            <div className="mt-2 text-center text-xs text-mut">
+              {d.duration}
+              {d.stops > 0 && ` · ${d.stops} stop${d.stops > 1 ? "s" : ""}`}
+            </div>
+            <div className="mt-1 text-center text-xs text-dim">
+              {d.stops === 0 ? "Non-stop" : `Connect via ${d.stopCodes.join(", ")}`}
+            </div>
           </div>
-          <RouteLine stops={d.stops} stopCodes={d.stopCodes} />
-          <div className="mt-1 text-center text-[11px] text-dim">
-            {d.stops === 0 ? "Non-stop" : `Connect via ${d.stopCodes.join(", ")}`}
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="font-mono text-xl font-bold">
-            {d.arrTime}
-            {d.dayBadge && <span className="ml-1 font-mono text-[10px] font-bold text-orn">{d.dayBadge}</span>}
-          </div>
-          <div className="text-xs text-mut">
-            {d.arrCode}
-            {d.arrTerminal && ` · T${d.arrTerminal}`}
+
+          {/* Arrival */}
+          <div className="flex-1 min-w-0 text-right">
+            <div className="font-mono text-2xl font-bold text-txt">
+              {d.arrTime}
+              {d.dayBadge && <span className="ml-1.5 font-mono text-xs font-bold text-orn">{d.dayBadge}</span>}
+            </div>
+            <div className="flex items-center gap-1.5 mt-1 justify-end text-sm text-mut">
+              {d.arrTerminal && <span className="text-dim">T{d.arrTerminal} ·</span>}
+              <span className="font-medium text-txt">{d.arrCode}</span>
+              <MapPin size={12} className="text-dim" />
+              {d.arrName && <span className="hidden md:inline text-dim">· {d.arrName}</span>}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-3 border-t border-edge pt-3">
-        <span className="text-lg font-bold">{money(quote.total_price, quote.currency, currency)}</span>
-        <span className="text-[11px] text-dim">{paxSummary(quote) || "per quote"}</span>
-        <div className="flex-1" />
+      {/* Price and book section */}
+      <div className="mt-5 flex items-center justify-between gap-4 border-t border-edge pt-4">
+        <div className="flex items-center gap-3">
+          <span className="text-xl font-bold text-txt tabular-nums">{money(quote.total_price, quote.currency, currency)}</span>
+          <span className="text-[11px] text-dim">{paxSummary(quote) || "per quote"}</span>
+          {d.bagPieces != null && (
+            <span className="flex items-center gap-1 text-[11px] text-mut border-l border-edge pl-3">
+              <span>{d.bagPieces}× {d.bagKg ?? "—"}kg</span>
+            </span>
+          )}
+          {d.refundable && (
+            <span className="flex items-center gap-1 text-[11px] text-grn border-l border-edge pl-3">
+              <Badge tone="green">Refundable</Badge>
+            </span>
+          )}
+        </div>
         <button 
-          className="btn-primary px-5" 
+          className="btn-primary px-6 py-2.5 flex items-center gap-2 shrink-0" 
           onClick={(e) => { e.stopPropagation(); handleClick(); }}
         >
-          <BadgeCheck size={15} />
-          Book
+          <BadgeCheck size={16} />
+          <span className="font-semibold">Book</span>
         </button>
       </div>
     </div>
@@ -359,71 +462,104 @@ function FlightFilterBar({
     filters.timeOfDay !== "all" || 
     filters.refundableOnly;
 
-  return (
-    <div className="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-lg border border-edge bg-card2/50">
-      {/* Stops filter */}
+  // Dropdown component for consistent styling
+  function FilterSelect({ label, value, options, onChange, className = "" }: {
+    label: string;
+    value: string;
+    options: { value: string; label: string }[];
+    onChange: (value: string) => void;
+    className?: string;
+  }) {
+    return (
       <div className="flex items-center gap-2">
-        <span className="text-xs text-dim">Stops:</span>
+        <label htmlFor={label} className="text-xs font-medium text-dim hidden sm:block">{label}</label>
         <select
-          value={filters.stops}
-          onChange={(e) => onFiltersChange({ stops: e.target.value as FlightFilters["stops"] })}
-          className="rounded-lg border border-edge bg-card2 px-2.5 py-1.5 text-[11px] font-mono outline-none focus:border-acc/60"
+          id={label}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={`filter-control text-sm font-medium ${className}`}
         >
-          <option value="all">All ({quotes.length})</option>
-          <option value="nonstop">Non-stop ({nonstopCount})</option>
-          <option value="1stop">1 Stop ({oneStopCount})</option>
-          <option value="2plus">2+ Stops ({twoPlusCount})</option>
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
         </select>
       </div>
+    );
+  }
+
+  const stopsOptions = [
+    { value: "all", label: `All (${quotes.length})` },
+    { value: "nonstop", label: `Non-stop (${nonstopCount})` },
+    { value: "1stop", label: `1 Stop (${oneStopCount})` },
+    { value: "2plus", label: `2+ Stops (${twoPlusCount})` },
+  ];
+
+  const timeOptions = [
+    { value: "all", label: "All Day" },
+    { value: "morning", label: "Morning (5am–12pm)" },
+    { value: "afternoon", label: "Afternoon (12pm–5pm)" },
+    { value: "evening", label: "Evening (5pm–9pm)" },
+    { value: "night", label: "Night (9pm–5am)" },
+  ];
+
+  const sortOptions = [
+    { value: "price:asc", label: "Price (Low → High)" },
+    { value: "price:desc", label: "Price (High → Low)" },
+    { value: "departure:asc", label: "Departure (Early → Late)" },
+    { value: "departure:desc", label: "Departure (Late → Early)" },
+    { value: "arrival:asc", label: "Arrival (Early → Late)" },
+    { value: "arrival:desc", label: "Arrival (Late → Early)" },
+    { value: "duration:asc", label: "Duration (Short → Long)" },
+    { value: "duration:desc", label: "Duration (Long → Short)" },
+    { value: "stops:asc", label: "Stops (Few → Many)" },
+    { value: "stops:desc", label: "Stops (Many → Few)" },
+  ];
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-xl border border-edge bg-card/50">
+      {/* Stops filter */}
+      <FilterSelect
+        label="Stops"
+        value={filters.stops}
+        options={stopsOptions}
+        onChange={(v) => onFiltersChange({ stops: v as FlightFilters["stops"] })}
+      />
 
       {/* Time of day filter */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-dim">Departure:</span>
-        <select
-          value={filters.timeOfDay}
-          onChange={(e) => onFiltersChange({ timeOfDay: e.target.value as FlightFilters["timeOfDay"] })}
-          className="rounded-lg border border-edge bg-card2 px-2.5 py-1.5 text-[11px] font-mono outline-none focus:border-acc/60"
-        >
-          <option value="all">All Day</option>
-          <option value="morning">Morning (5am–12pm)</option>
-          <option value="afternoon">Afternoon (12pm–5pm)</option>
-          <option value="evening">Evening (5pm–9pm)</option>
-          <option value="night">Night (9pm–5am)</option>
-        </select>
-      </div>
+      <FilterSelect
+        label="Departure"
+        value={filters.timeOfDay}
+        options={timeOptions}
+        onChange={(v) => onFiltersChange({ timeOfDay: v as FlightFilters["timeOfDay"] })}
+      />
 
       {/* Refundable filter */}
-      <label className="flex items-center gap-1.5 cursor-pointer">
+      <label className="flex items-center gap-2 cursor-pointer">
         <input
           type="checkbox"
           checked={filters.refundableOnly}
           onChange={(e) => onFiltersChange({ refundableOnly: e.target.checked })}
-          className="rounded border-edge bg-card2 text-acc accent-acc focus:ring-acc/50"
+          className="rounded border-edge bg-card2 text-acc accent-acc focus:ring-acc/50 size-4"
         />
-        <span className="text-xs text-mut">Refundable only ({refundableCount})</span>
+        <span className="text-sm text-mut hidden sm:inline">Refundable only ({refundableCount})</span>
+        <span className="text-sm text-mut sm:hidden">Refundable ({refundableCount})</span>
       </label>
 
       {/* Sort */}
       <div className="flex items-center gap-2 ml-auto">
-        <span className="text-xs text-dim">Sort:</span>
+        <label htmlFor="sort" className="text-xs font-medium text-dim hidden sm:block">Sort</label>
         <select
+          id="sort"
           value={`${filters.sortKey}:${filters.sortDir}`}
           onChange={(e) => {
             const [key, dir] = e.target.value.split(":");
             onFiltersChange({ sortKey: key as FlightSortKey, sortDir: dir as SortDirection });
           }}
-          className="rounded-lg border border-edge bg-card2 px-2.5 py-1.5 text-[11px] font-mono outline-none focus:border-acc/60"
+          className="filter-control text-sm font-medium"
         >
-          <option value="price:asc">Price (Low → High)</option>
-          <option value="price:desc">Price (High → Low)</option>
-          <option value="departure:asc">Departure (Early → Late)</option>
-          <option value="departure:desc">Departure (Late → Early)</option>
-          <option value="arrival:asc">Arrival (Early → Late)</option>
-          <option value="arrival:desc">Arrival (Late → Early)</option>
-          <option value="duration:asc">Duration (Short → Long)</option>
-          <option value="duration:desc">Duration (Long → Short)</option>
-          <option value="stops:asc">Stops (Few → Many)</option>
-          <option value="stops:desc">Stops (Many → Few)</option>
+          {sortOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
         </select>
       </div>
 
@@ -431,9 +567,9 @@ function FlightFilterBar({
       {hasActiveFilters && (
         <button
           onClick={onClearAll}
-          className="flex items-center gap-1 px-2 py-1.5 text-[11px] text-dim hover:text-mut rounded border border-edge bg-card2"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-dim hover:text-mut rounded-lg border border-edge bg-card2 hover:bg-card transition"
         >
-          <X size={12} /> Clear filters
+          <X size={13} /> Clear filters
         </button>
       )}
     </div>
@@ -442,7 +578,6 @@ function FlightFilterBar({
 
 /* ------------------------------ results list ------------------------------ */
 export function FlightResults({ quotes }: { quotes: FlightQuote[] }) {
-  const { currency } = useStore();
   const [showAll, setShowAll] = useState(false);
   const [filters, setFilters] = useState<FlightFilters>(DEFAULT_FILTERS);
 
@@ -468,6 +603,16 @@ export function FlightResults({ quotes }: { quotes: FlightQuote[] }) {
         onClearAll={handleClearAll}
       />
 
+      {/* Results count */}
+      <div className="flex items-center justify-between text-sm text-mut mb-2">
+        <span>Showing {visible.length} of {sorted.length} option{sorted.length !== 1 ? "s" : ""}</span>
+        {filters.stops !== "all" && (
+          <span className="text-acc font-medium">
+            Filtered: {filters.stops === "nonstop" ? "Non-stop" : filters.stops === "1stop" ? "1 Stop" : "2+ Stops"}
+          </span>
+        )}
+      </div>
+
       {/* Results */}
       <div className="space-y-4">
         {sorted.length > 0 && (
@@ -485,7 +630,10 @@ export function FlightResults({ quotes }: { quotes: FlightQuote[] }) {
           />
         ))}
         {sorted.length > 4 && (
-          <button className="w-full rounded-lg border border-edge bg-card2/50 py-2 text-xs font-semibold text-mut hover:text-txt" onClick={() => setShowAll((v) => !v)}>
+          <button 
+            className="w-full rounded-xl border border-edge bg-card/50 py-3 text-sm font-semibold text-mut hover:text-txt hover:border-edge2 transition"
+            onClick={() => setShowAll((v) => !v)}
+          >
             {showAll ? "Collapse list" : `View all ${sorted.length} options`}
           </button>
         )}
@@ -493,8 +641,9 @@ export function FlightResults({ quotes }: { quotes: FlightQuote[] }) {
       </div>
 
       {sorted.length === 0 && quotes.length > 0 && (
-        <div className="text-center py-8 text-mut">
-          No flights match your filters. <button className="text-acc underline ml-1" onClick={handleClearAll}>Clear filters</button>
+        <div className="text-center py-10 text-mut">
+          <div className="text-txt font-medium mb-1">No flights match your filters</div>
+          <button className="text-acc underline ml-1" onClick={handleClearAll}>Clear filters</button>
         </div>
       )}
     </div>
@@ -574,56 +723,80 @@ function HotelFilterBar({
     filters.maxPrice !== null || 
     filters.refundableOnly;
 
-  return (
-    <div className="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-lg border border-edge bg-card2/50">
-      {/* Star rating filter */}
+  function FilterSelect({ label, value, options, onChange, className = "" }: {
+    label: string;
+    value: string | number;
+    options: { value: string | number; label: string }[];
+    onChange: (value: string | number) => void;
+    className?: string;
+  }) {
+    return (
       <div className="flex items-center gap-2">
-        <span className="text-xs text-dim">Rating:</span>
+        <label htmlFor={label} className="text-xs font-medium text-dim hidden sm:block">{label}</label>
         <select
-          value={filters.starRating}
-          onChange={(e) => onFiltersChange({ starRating: e.target.value === "all" ? "all" : parseInt(e.target.value) })}
-          className="rounded-lg border border-edge bg-card2 px-2.5 py-1.5 text-[11px] font-mono outline-none focus:border-acc/60"
+          id={label}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={`filter-control text-sm font-medium ${className}`}
         >
-          <option value="all">All Stars</option>
-          <option value="5">5★+ ({starCounts[5]})</option>
-          <option value="4">4★+ ({starCounts[4]})</option>
-          <option value="3">3★+ ({starCounts[3]})</option>
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
         </select>
       </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-xl border border-edge bg-card/50">
+      {/* Star rating filter */}
+      <FilterSelect
+        label="Rating"
+        value={filters.starRating}
+        options={[
+          { value: "all", label: "All Stars" },
+          { value: 5, label: `5★+ (${starCounts[5]})` },
+          { value: 4, label: `4★+ (${starCounts[4]})` },
+          { value: 3, label: `3★+ (${starCounts[3]})` },
+        ]}
+        onChange={(v) => onFiltersChange({ starRating: v === "all" ? "all" : parseInt(v as string) })}
+      />
 
       {/* Price range filter */}
       <div className="flex items-center gap-2">
-        <span className="text-xs text-dim">Max Price:</span>
+        <label htmlFor="maxPrice" className="text-xs font-medium text-dim hidden sm:block">Max Price</label>
         <input
+          id="maxPrice"
           type="number"
           value={filters.maxPrice ?? ""}
           onChange={(e) => onFiltersChange({ maxPrice: e.target.value ? parseFloat(e.target.value) : null })}
           placeholder={maxPrice > 0 ? `Max ${money(maxPrice, quotes[0]?.currency ?? "USD", "USD")}` : "No limit"}
-          className="rounded-lg border border-edge bg-card2 w-28 px-2.5 py-1.5 text-[11px] font-mono outline-none focus:border-acc/60"
+          className="filter-control w-32 text-sm font-mono"
         />
       </div>
 
       {/* Refundable filter */}
-      <label className="flex items-center gap-1.5 cursor-pointer">
+      <label className="flex items-center gap-2 cursor-pointer">
         <input
           type="checkbox"
           checked={filters.refundableOnly}
           onChange={(e) => onFiltersChange({ refundableOnly: e.target.checked })}
-          className="rounded border-edge bg-card2 text-acc accent-acc focus:ring-acc/50"
+          className="rounded border-edge bg-card2 text-acc accent-acc focus:ring-acc/50 size-4"
         />
-        <span className="text-xs text-mut">Refundable only ({refundableCount})</span>
+        <span className="text-sm text-mut">Refundable only ({refundableCount})</span>
       </label>
 
       {/* Sort */}
       <div className="flex items-center gap-2 ml-auto">
-        <span className="text-xs text-dim">Sort:</span>
+        <label htmlFor="hotelSort" className="text-xs font-medium text-dim hidden sm:block">Sort</label>
         <select
+          id="hotelSort"
           value={`${filters.sortKey}:${filters.sortDir}`}
           onChange={(e) => {
             const [key, dir] = e.target.value.split(":");
             onFiltersChange({ sortKey: key as HotelSortKey, sortDir: dir as SortDirection });
           }}
-          className="rounded-lg border border-edge bg-card2 px-2.5 py-1.5 text-[11px] font-mono outline-none focus:border-acc/60"
+          className="filter-control text-sm font-medium"
         >
           <option value="price:asc">Total Price (Low → High)</option>
           <option value="price:desc">Total Price (High → Low)</option>
@@ -638,9 +811,9 @@ function HotelFilterBar({
       {hasActiveFilters && (
         <button
           onClick={onClearAll}
-          className="flex items-center gap-1 px-2 py-1.5 text-[11px] text-dim hover:text-mut rounded border border-edge bg-card2"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-dim hover:text-mut rounded-lg border border-edge bg-card2 hover:bg-card transition"
         >
-          <X size={12} /> Clear filters
+          <X size={13} /> Clear filters
         </button>
       )}
     </div>
@@ -692,10 +865,10 @@ export function HotelResults({ result }: { result: TaskReply }) {
 
       <div className="grid gap-3 md:grid-cols-2">
         {sorted.map((q, i) => (
-          <div key={(q.quote_id ?? i) as string} className="card p-4 cursor-pointer hover:border-edge2 hover:bg-card2/50 transition">
+          <div key={(q.quote_id ?? i) as string} className="flight-card p-4 cursor-pointer transition">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <div className="text-[15px] font-semibold leading-5">{q.hotel_name || "—"}</div>
+                <div className="text-base font-semibold leading-5">{q.hotel_name || "—"}</div>
                 <div className="mt-0.5 flex items-center gap-1 text-xs text-orn">
                   {Array.from({ length: q.star_rating ?? 0 }).map((_, s) => (
                     <Star key={s} size={11} fill="currentColor" />

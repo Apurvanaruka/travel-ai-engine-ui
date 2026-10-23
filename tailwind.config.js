@@ -17,9 +17,9 @@ export default {
         acc: "rgb(var(--acc) / <alpha-value>)",
         acc2: "rgb(var(--acc2) / <alpha-value>)",
         sec: "rgb(var(--sec) / <alpha-value>)",
-        grn: "#22c55e",
-        orn: "#f59e0b",
-        red: "#ef4444",
+        grn: "rgb(var(--grn) / <alpha-value>)",
+        orn: "rgb(var(--orn) / <alpha-value>)",
+        red: "rgb(var(--red) / <alpha-value>)",
         vio: "#7c5cf0",
       },
       boxShadow: {
